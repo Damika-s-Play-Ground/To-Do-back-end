@@ -7,6 +7,7 @@ package lk.ijse.exp.jwt.api;
 
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
+import lk.ijse.exp.jwt.model.User;
 import org.apache.commons.dbcp2.BasicDataSource;
 
 import javax.servlet.ServletException;
@@ -48,19 +49,20 @@ public class UserServlet extends HttpServlet {
                 pstm.setObject(1, id);
             }
             ResultSet rst = pstm.executeQuery();
-            List<user> customersList = new ArrayList<>();
+            List<User> usersList = new ArrayList<>();
             while (rst.next()) {
                 id = rst.getString(1);
                 String name = rst.getString(2);
-                String address = rst.getString(3);
-                customersList.add(new Customer(id, name, address));
+                String password = rst.getString(3);
+                String email = rst.getString(4);
+                usersList.add(new User(id, name, password,email));
             }
 
-            if (id != null && customersList.isEmpty()) {
+            if (id != null && usersList.isEmpty()) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             } else {
                 Jsonb jsonb = JsonbBuilder.create();
-                out.println(jsonb.toJson(customersList));
+                out.println(jsonb.toJson(usersList));
                 connection.close();
             }
         } catch (SQLException e) {
@@ -80,22 +82,22 @@ public class UserServlet extends HttpServlet {
         BasicDataSource cp = (BasicDataSource) getServletContext().getAttribute("cp");
         try (Connection connection = cp.getConnection()) {
             Jsonb jsonb = JsonbBuilder.create();
-            Customer customer = jsonb.fromJson(req.getReader(), Customer.class);
+            User user = jsonb.fromJson(req.getReader(), User.class);
 
             /* Validation Logic */
-            if (customer.getId() == null || customer.getName() == null || customer.getAddress() == null) {
+            if (user.getId() == null || user.getName() == null || user.getPassword() == null || user.getEmail() == null) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
-            if (!customer.getId().matches("C\\d{3}") || customer.getName().trim().isEmpty() || customer.getAddress().trim().isEmpty()) {
+            if (!user.getId().matches("U\\d{3}") || user.getName().trim().isEmpty() || user.getAddress().trim().isEmpty()) {
 
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
             PreparedStatement pstm = connection.prepareStatement("INSERT INTO Customer VALUES (?,?,?)");
-            pstm.setString(1, customer.getId());
-            pstm.setString(2, customer.getName());
-            pstm.setString(3, customer.getAddress());
+            pstm.setString(1, user.getId());
+            pstm.setString(2, user.getName());
+            pstm.setString(3, user.getAddress());
             if (pstm.executeUpdate() > 0) {
                 resp.setStatus(HttpServletResponse.SC_CREATED);
             } else {
