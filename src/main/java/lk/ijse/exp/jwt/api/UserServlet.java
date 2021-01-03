@@ -7,6 +7,7 @@ package lk.ijse.exp.jwt.api;
 
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
+import jakarta.json.bind.JsonbException;
 import lk.ijse.exp.jwt.model.User;
 import org.apache.commons.dbcp2.BasicDataSource;
 
@@ -89,15 +90,16 @@ public class UserServlet extends HttpServlet {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
-            if (!user.getId().matches("U\\d{3}") || user.getName().trim().isEmpty() || user.getAddress().trim().isEmpty()) {
+            if (!user.getId().matches("U\\d{3}") || user.getName().trim().isEmpty() || user.getEmail().trim().isEmpty()||user.getPassword().length()<10) {
 
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
-            PreparedStatement pstm = connection.prepareStatement("INSERT INTO Customer VALUES (?,?,?)");
+            PreparedStatement pstm = connection.prepareStatement("INSERT INTO user VALUES (?,?,?,?)");
             pstm.setString(1, user.getId());
             pstm.setString(2, user.getName());
-            pstm.setString(3, user.getAddress());
+            pstm.setString(3, user.getPassword());
+            pstm.setString(4, user.getEmail());
             if (pstm.executeUpdate() > 0) {
                 resp.setStatus(HttpServletResponse.SC_CREATED);
             } else {
@@ -123,7 +125,7 @@ public class UserServlet extends HttpServlet {
         resp.addHeader("Access-Control-Allow-Origin", "http://localhost:3000");
 */
         String id = req.getParameter("id");
-        if (id == null || !id.matches("C\\d{3}")) {
+        if (id == null || !id.matches("U\\d{3}")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
@@ -131,24 +133,26 @@ public class UserServlet extends HttpServlet {
         BasicDataSource cp = (BasicDataSource) getServletContext().getAttribute("cp");
         try (Connection connection = cp.getConnection()) {
             Jsonb jsonb = JsonbBuilder.create();
-            Customer customer = jsonb.fromJson(req.getReader(), Customer.class);
+            User user = jsonb.fromJson(req.getReader(), User.class);
 
             /* Validation Logic */
-            if (customer.getId() != null || customer.getName() == null || customer.getAddress() == null) {
+            if (user.getId() == null || user.getName() == null || user.getPassword() == null || user.getEmail() == null) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
-            if (customer.getName().trim().isEmpty() || customer.getAddress().trim().isEmpty()) {
+            if (user.getName().trim().isEmpty() || user.getEmail().trim().isEmpty()||user.getPassword().length()<10) {
+
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
-            PreparedStatement pstm = connection.prepareStatement("SELECT * FROM Customer WHERE id=?");
+            PreparedStatement pstm = connection.prepareStatement("SELECT * FROM user WHERE id=?");
             pstm.setObject(1, id);
             if (pstm.executeQuery().next()) {
-                pstm = connection.prepareStatement("UPDATE Customer SET name=?, address=? WHERE id=?");
-                pstm.setObject(1, customer.getName());
-                pstm.setObject(2, customer.getAddress());
-                pstm.setObject(3, id);
+                pstm = connection.prepareStatement("UPDATE user SET name=?, password=?, email=? WHERE id=?");
+                pstm.setObject(1, user.getName());
+                pstm.setObject(2, user.getPassword());
+                pstm.setObject(3, user.getEmail());
+                pstm.setObject(4, id);
                 if (pstm.executeUpdate() > 0) {
                     resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
                 } else {
@@ -172,17 +176,17 @@ public class UserServlet extends HttpServlet {
         resp.addHeader("Access-Control-Allow-Origin", "http://localhost:3000");
 */
         String id = req.getParameter("id");
-        if (id == null || !id.matches("C\\d{3}")) {
+        if (id == null || !id.matches("U\\d{3}")) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
         BasicDataSource cp = (BasicDataSource) getServletContext().getAttribute("cp");
         try (Connection connection = cp.getConnection()) {
-            PreparedStatement pstm = connection.prepareStatement("SELECT * FROM Customer WHERE id=?");
+            PreparedStatement pstm = connection.prepareStatement("SELECT * FROM user WHERE id=?");
             pstm.setObject(1, id);
             if (pstm.executeQuery().next()) {
-                pstm = connection.prepareStatement("DELETE FROM Customer WHERE id=?");
+                pstm = connection.prepareStatement("DELETE FROM user WHERE id=?");
                 pstm.setObject(1, id);
                 boolean success = pstm.executeUpdate() > 0;
                 if (success) {
