@@ -5,6 +5,8 @@
 
 package lk.ijse.exp.jwt.api;
 
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
 import org.apache.commons.dbcp2.BasicDataSource;
 
 import javax.servlet.ServletException;
@@ -41,12 +43,12 @@ public class UserServlet extends HttpServlet {
 
         try (Connection connection = cp.getConnection()) {
             PrintWriter out = resp.getWriter();
-            PreparedStatement pstm = connection.prepareStatement("SELECT * FROM Customer" + ((id != null) ? " WHERE id=?" : ""));
+            PreparedStatement pstm = connection.prepareStatement("SELECT * FROM user" + ((id != null) ? " WHERE id=?" : ""));
             if (id != null) {
                 pstm.setObject(1, id);
             }
             ResultSet rst = pstm.executeQuery();
-            List<Customer> customersList = new ArrayList<>();
+            List<user> customersList = new ArrayList<>();
             while (rst.next()) {
                 id = rst.getString(1);
                 String name = rst.getString(2);
